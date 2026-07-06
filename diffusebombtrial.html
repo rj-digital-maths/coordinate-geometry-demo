@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vector Intercept Hub (TRIAL) — RJ Interactive Maths</title>
+  <style>
+    /* Reset and Layout Rules */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #04060a;
+      color: #cbd5e1;
+      font-family: 'Courier New', Courier, monospace;
+      height: 100vh;
+      max-height: 100vh;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      letter-spacing: 0.05em;
+      user-select: none;
+      overflow: hidden;
+    }
+
+    /* Header Styling */
+    header {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      border: 1px solid #334155;
+      background-color: #0b0f19;
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+      flex-shrink: 0;
+    }
+    @media (min-width: 640px) {
+      header {
+        flex-direction: row;
+      }
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .status-dot {
+      width: 14px;
+      height: 14px;
+      background-color: #f59e0b;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+    }
+    .header-title-sub {
+      color: #64748b;
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .header-title-main {
+      font-size: 20px;
+      font-weight: bold;
+      color: #f8fafc;
+    }
+
+    /* Header Metrics Card layout */
+    .header-metrics {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .metric-card {
+      border: 1px solid #334155;
+      background-color: #070a12;
+      padding: 8px 20px;
+      border-radius: 4px;
+      text-align: center;
+      min-width: 160px;
+    }
+    .metric-label {
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      color: #64748b;
+      font-weight: bold;
+      margin-bottom: 2px;
+    }
+    .metric-value {
+      font-size: 20px;
+      font-weight: bold;
+      color: #ef4444;
+    }
+    .metric-value.white {
+      color: #e2e8f0;
+    }
+    .metric-divider {
+      color: #475569;
+    }
+
+    /* Main Section Architecture Split Layout */
+    main {
+      width: 100%;
+      max-width: 1200px;
+      margin: 16px auto;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      min-h: 0;
+      overflow: hidden;
+    }
+    @media (min-width: 1024px) {
+      main {
+        flex-direction: row;
+      }
+    }
+
+    /* Radar Screen Canvas Container */
+    .radar-screen {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #334155;
+      background-color: #070a12;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      aspect-ratio: 3/2;
+    }
+    @media (min-width: 1024px) {
+      .radar-screen {
+        width: auto;
+        flex-grow: 1;
+        max-height: 73vh;
+      }
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .radar-screen::after {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(15, 23, 42, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
+      z-index: 10;
+      background-size: 100% 4px;
+      pointer-events: none;
+    }
+
+    /* Sidebar Controls Terminal */
+    .controls-sidebar {
+      width: 100%;
+      border: 1px solid #334155;
+      background-color: #0b0f19;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 20px;
+      flex-shrink: 0;
+    }
+    @media (min-width: 1024px) {
+      .controls-sidebar {
+        width: 350px;
+      }
+    }
+    .input-label {
+      display: block;
+      font-size: 12px;
+      color: #94a3b8;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .instruction-box {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 16px;
+      line-height: 1.5;
+      border-left: 2px solid rgba(239, 68, 68, 0.4);
+      padding-left: 12px;
+    }
+    .highlight-text {
+      color: #e2e8f0;
+      font-weight: bold;
+    }
+    .amber-text {
+      color: #ef4444;
+      font-weight: bold;
+    }
+    input[type="text"] {
+      width: 100%;
+      background-color: #070a12;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      padding: 12px 16px;
+      font-weight: bold;
+      font-size: 16px;
+      letter-spacing: 0.1em;
+      text-align: center;
+      border-radius: 4px;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #475569;
+      box-shadow: 0 0 12px rgba(148, 163, 184, 0.08);
+    }
+    .fire-button {
+      width: 100%;
+      background-color: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #334155;
+      font-weight: bold;
+      padding: 12px 0;
+      font-size: 16px;
+      letter-spacing: 0.1em;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .fire-button:hover {
+      background-color: #334155;
+    }
+
+    /* Modal Overlay System */
+    #overlay {
+      position: absolute;
+      inset: 0;
+      background-color: rgba(7, 10, 18, 0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 40;
+      padding: 24px;
+    }
+    #overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-box {
+      border: 1px solid #334155;
+      background-color: #0b0f19;
+      max-width: 400px;
+      width: 100%;
+      padding: 32px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12 rgba(0, 0, 0, 0.5);
+    }
+    .paywall-badge {
+      width: 56px;
+      height: 56px;
+      background-color: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #f59e0b;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .modal-title {
+      font-size: 22px;
+      font-weight: bold;
+      color: #f8fafc;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    .modal-description {
+      color: #94a3b8;
+      font-size: 13px;
+      margin-bottom: 24px;
+      padding: 0 8px;
+      line-height: 1.4;
+    }
+    .summary-card {
+      border: 1px solid #334155;
+      background-color: #070a12;
+      padding: 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      text-align: left;
+      margin-bottom: 24px;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .summary-row:last-child {
+      margin-bottom: 0;
+    }
+    .summary-label {
+      color: #64748b;
+    }
+    .summary-value {
+      font-weight: bold;
+    }
+    .summary-value.white { color: #e2e8f0; }
+    .summary-value.amber { color: #f59e0b; }
+    
+    .upgrade-button {
+      display: block;
+      width: 100%;
+      background-color: #f59e0b;
+      color: #04060a;
+      border: none;
+      font-weight: bold;
+      padding: 14px 0;
+      font-size: 14px;
+      letter-spacing: 0.05em;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.15s ease;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+      margin-bottom: 12px;
+    }
+    .upgrade-button:hover {
+      background-color: #fbbf24;
+    }
+    .modal-footer {
+      font-size: 9px;
+      color: #475569;
+    }
+
+    /* Footer Layout */
+    footer {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      color: #475569;
+      border-top: 1px solid #1e293b;
+      padding-top: 12px;
+      flex-shrink: 0;
+    }
+    @media (min-width: 640px) {
+      footer {
+        flex-direction: row;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <div class="status-dot"></div>
+      <div>
+        <div class="header-title-sub">Grid Assessment Suite</div>
+        <div class="header-title-main">VECTOR INTERCEPT SYSTEM (TRIAL)</div>
+      </div>
+    </div>
+
+    <div class="header-metrics">
+      <div class="metric-card">
+        <span class="metric-label">Active Targets</span>
+        <span id="activeBombsCount" class="metric-value">5 / 5</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Strikes Executed</span>
+        <span class="metric-value white"><span id="score">0</span><span class="metric-divider">/</span><span id="totalAttempts">0</span></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Split Workspace Layout -->
+  <main>
+    
+    <!-- Left Hand Grid Panel -->
+    <div class="radar-screen">
+      <canvas id="game" width="900" height="600"></canvas>
+
+      <!-- Paywall Dialog Overlay -->
+      <div id="overlay">
+        <div class="modal-box">
+          <div class="paywall-badge">★</div>
+          <h2 class="modal-title">EVALUATION LIMIT REACHED</h2>
+          <p class="modal-description">Unlock unlimited workspace scenarios, comprehensive coordinate mapping levels, and advanced target telemetry tracking suites.</p>
+          
+          <div class="summary-card">
+            <div class="summary-row">
+              <span class="summary-label">Sessions Completed:</span>
+              <span class="summary-value white">1 Evaluation Cycle</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">System Accuracy Rating:</span>
+              <span id="finalAccuracy" class="summary-value amber">0%</span>
+            </div>
+          </div>
+
+          <!-- Replace YOUR_INSTAMOJO_LINK_HERE with your live payment link -->
+          <a href="https://rjinteractivemaths.myinstamojo.com/" target="_blank" class="upgrade-button">
+            UPGRADE TO PREMIUM SUITE
+          </a>
+          <p class="modal-footer">Enterprise deployment licensing available via RJ Interactive Maths.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Hand Controls Sidebar Box -->
+    <div class="controls-sidebar">
+      <div>
+        <label for="coordInput" class="input-label">Target Tracking Telemetry Input</label>
+        <div class="instruction-box">
+          Format: <span class="highlight-text">X, Y</span><br>
+          Include signs for negatives.<br>
+          Example: <span class="amber-text">3, -2</span> or <span class="amber-text">-5, 4</span>
+        </div>
+        <input 
+          type="text" 
+          id="coordInput" 
+          placeholder="Enter (X, Y)" 
+          autocomplete="off"
+        >
+      </div>
+      <button id="fireBtn" class="fire-button">EXECUTE FIRE</button>
+    </div>
+  </main>
+
+  <!-- Corporate Footer -->
+  <footer>
+    <div>RADAR TELEMETRY SYSTEM // DEMO EVALUATION EDITION</div>
+    <div>&copy; RJ Interactive Maths</div>
+  </footer>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const centerX = canvas.width / 2;
+const centerY = canvas.height / 2;
+const scale = 45;
+
+let score = 0;
+let attempts = 0;
+const targetCount = 5;
+
+let activeBombs = [];
+let explosions = [];
+let indicators = [];
+let activeRockets = [];
+let pulseTimer = 0;
+let trialLocked = false;
+
+const rocketImg = new Image();
+rocketImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2394a3b8"><path d="M12.89 2.42a1 1 0 0 0-1.78 0l-2.67 5.34a11 11 0 0 0-1.19 3.53l-.25 2A3 3 0 0 0 10 16.24V19a1 1 0 0 0 .55.89l1 1a1 1 0 0 0 1.1-.18l.8-.8a1 1 0 0 0 .28-.71v-2.96a3 3 0 0 0 3-2.94l-.25-2a11 11 0 0 0-1.19-3.53z"/></svg>';
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playBeep(freq, type, duration) {
+    try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    } catch(e) {}
+}
+
+function initBombs() {
+    activeBombs = [];
+    while (activeBombs.length < targetCount) {
+        let bomb = {
+            x: Math.floor(Math.random() * 17) - 8,
+            y: Math.floor(Math.random() * 11) - 5
+        };
+        if (bomb.x === 0 && bomb.y === 0) continue;
+        if (!activeBombs.some(b => b.x === bomb.x && b.y === bomb.y)) {
+            activeBombs.push(bomb);
+        }
+    }
+}
+
+function updateUI() {
+    document.getElementById("activeBombsCount").innerText = `${activeBombs.length} / ${targetCount}`;
+    document.getElementById("score").innerText = score;
+    document.getElementById("totalAttempts").innerText = attempts;
+}
+
+function drawGrid() {
+    ctx.strokeStyle = "rgba(51, 65, 85, 0.45)";
+    ctx.lineWidth = 1;
+
+    for (let x = centerX; x < canvas.width; x += scale) {
+        ctx.beginPath(); ctx.moveTo(Math.floor(x) + 0.5, 0); ctx.lineTo(Math.floor(x) + 0.5, canvas.height); ctx.stroke();
+    }
+    for (let x = centerX; x > 0; x -= scale) {
+        ctx.beginPath(); ctx.moveTo(Math.floor(x) + 0.5, 0); ctx.lineTo(Math.floor(x) + 0.5, canvas.height); ctx.stroke();
+    }
+    for (let y = centerY; y < canvas.height; y += scale) {
+        ctx.beginPath(); ctx.moveTo(0, Math.floor(y) + 0.5); ctx.lineTo(canvas.width, Math.floor(y) + 0.5); ctx.stroke();
+    }
+    for (let y = centerY; y > 0; y -= scale) {
+        ctx.beginPath(); ctx.moveTo(0, Math.floor(y) + 0.5); ctx.lineTo(canvas.width, Math.floor(y) + 0.5); ctx.stroke();
+    }
+}
+
+function drawAxes() {
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.75)";
+    ctx.lineWidth = 2;
+
+    ctx.beginPath(); ctx.moveTo(0, centerY); ctx.lineTo(canvas.width, centerY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(centerX, 0); ctx.lineTo(centerX, canvas.height); ctx.stroke();
+}
+
+function drawNumbers() {
+    ctx.fillStyle = "rgba(148, 163, 184, 0.9)";
+    ctx.font = "700 14px 'Courier New', monospace";
+
+    for (let i = -9; i <= 9; i++) {
+        let x = centerX + i * scale;
+        if (i !== 0) ctx.fillText(i, x - 6, centerY + 20);
+    }
+    for (let i = -6; i <= 6; i++) {
+        let y = centerY - i * scale;
+        if (i !== 0) ctx.fillText(i, centerX + 14, y + 5);
+    }
+    ctx.fillText("0", centerX + 14, centerY + 20);
+}
+
+function drawBombs() {
+    pulseTimer += 0.04;
+    const pulseRad = Math.abs(Math.sin(pulseTimer)) * 3;
+
+    activeBombs.forEach(bomb => {
+        const pixelX = centerX + bomb.x * scale;
+        const pixelY = centerY - bomb.y * scale;
+
+        ctx.strokeStyle = "rgba(239, 68, 68, 0.85)";
+        ctx.fillStyle = "rgba(239, 68, 68, 0.1)";
+        ctx.lineWidth = 2;
+
+        ctx.beginPath();
+        ctx.arc(pixelX, pixelY, 9 + pulseRad, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#ef4444";
+        ctx.beginPath();
+        ctx.arc(pixelX, pixelY, 3, 0, Math.PI * 2);
+        ctx.fill();
+    });
+}
+
+function spawnRocket(tx, ty, matchedBombIndex) {
+    const startX = canvas.width / 2;
+    const startY = canvas.height;
+    const angle = Math.atan2(ty - startY, tx - startX);
+    const speed = 18;
+
+    activeRockets.push({
+        x: startX, y: startY,
+        targetX: tx, targetY: ty,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        angle: angle + Math.PI / 2,
+        matchedIndex: matchedBombIndex
+    });
+}
+
+function createExplosion(x, y) {
+    for (let i = 0; i < 35; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 4 + 1.5;
+        explosions.push({
+            x: x, y: y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            size: Math.random() * 2 + 1,
+            color: `hsl(${Math.random() * 15 + 10}, 95%, 55%)`, 
+            life: 25
+        });
+    }
+}
+
+function addIndicator(x, y, text, success) {
+    indicators.push({
+        x: x, y: y,
+        text: text,
+        color: success ? '#38bdf8' : '#f43f5e',
+        life: 45, offsetY: 0
+    });
+}
+
+function handleFireCommand() {
+    if (trialLocked) return;
+    const inputField = document.getElementById("coordInput");
+    const value = inputField.value;
+    inputField.value = "";
+
+    const matches = value.match(/-?\d+/g);
+    if (!matches || matches.length < 2) {
+        playBeep(120, "sawtooth", 0.2);
+        return;
+    }
+
+    const typedX = parseInt(matches[0]);
+    const typedY = parseInt(matches[1]);
+    attempts++;
+
+    const targetPixelX = centerX + typedX * scale;
+    const targetPixelY = centerY - typedY * scale;
+
+    if (targetPixelX < 0 || targetPixelX > canvas.width || targetPixelY < 0 || targetPixelY > canvas.height) {
+        addIndicator(canvas.width / 2, canvas.height / 2, `OUT OF RANGE`, false);
+        updateUI();
+        return;
+    }
+
+    const matchedIndex = activeBombs.findIndex(b => b.x === typedX && b.y === typedY);
+
+    if (matchedIndex !== -1) {
+        playBeep(360, "sine", 0.05);
+        spawnRocket(targetPixelX, targetPixelY, matchedIndex);
+    } else {
+        playBeep(150, "sawtooth", 0.15);
+        addIndicator(targetPixelX, targetPixelY, `MISALIGNMENT (${typedX}, ${typedY})`, false);
+    }
+    updateUI();
+}
+
+function updateEntities() {
+    for (let i = activeRockets.length - 1; i >= 0; i--) {
+        let r = activeRockets[i];
+        r.x += r.vx; r.y += r.vy;
+
+        if (Math.hypot(r.targetX - r.x, r.targetY - r.y) <= 18) {
+            playBeep(440, "sine", 0.15);
+            createExplosion(r.targetX, r.targetY);
+            addIndicator(r.targetX, r.targetY, "TARGET CLEARED", true);
+            
+            if (r.matchedIndex !== null && activeBombs[r.matchedIndex]) {
+                activeBombs.splice(r.matchedIndex, 1);
+            }
+            activeRockets.splice(i, 1);
+            updateUI();
+
+            if (activeBombs.length === 0) {
+                trialLocked = true;
+                setTimeout(endGame, 1000);
+            }
+        }
+    }
+
+    for (let i = explosions.length - 1; i >= 0; i--) {
+        let p = explosions[i];
+        p.x += p.vx; p.y += p.vy;
+        p.life--;
+        if (p.life <= 0) explosions.splice(i, 1);
+    }
+
+    for (let i = indicators.length - 1; i >= 0; i--) {
+        let ind = indicators[i];
+        ind.offsetY -= 0.3; ind.life--;
+        if (ind.life <= 0) indicators.splice(i, 1);
+    }
+}
+
+function drawEntities() {
+    activeRockets.forEach(r => {
+        if (!rocketImg.complete) return;
+        const size = 26;
+        ctx.save();
+        ctx.translate(r.x, r.y);
+        ctx.rotate(r.angle);
+        ctx.drawImage(rocketImg, -size / 2, -size / 2, size, size);
+        ctx.restore();
+    });
+
+    explosions.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life / 25;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.globalAlpha = 1.0;
+
+    indicators.forEach(ind => {
+        ctx.fillStyle = ind.color;
+        ctx.font = "700 14px 'Courier New'";
+        ctx.globalAlpha = ind.life / 45;
+        ctx.fillText(ind.text, ind.x + 12, ind.y + ind.offsetY);
+    });
+    ctx.globalAlpha = 1.0;
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawGrid();
+    drawAxes();
+    drawNumbers();
+    drawBombs();
+    updateEntities();
+    drawEntities();
+    requestAnimationFrame(draw);
+}
+
+document.getElementById("fireBtn").addEventListener("click", handleFireCommand);
+document.getElementById("coordInput").addEventListener("keydown", function(e) {
+    if (e.key === "Enter") handleFireCommand();
+});
+
+function endGame() {
+    const overlay = document.getElementById("overlay");
+    const accuracy = attempts === 0 ? 100 : Math.round((score / attempts) * 100);
+    document.getElementById("finalAccuracy").innerText = `${accuracy}%`;
+    overlay.classList.add("active");
+    document.getElementById("coordInput").blur();
+}
+
+initBombs();
+updateUI();
+draw();
+document.getElementById("coordInput").focus();
+</script>
+
+</body>
+</html>

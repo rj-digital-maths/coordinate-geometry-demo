@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vector Intercept Hub (TRIAL) — RJ Interactive Maths</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #04060a;
+      color: #cbd5e1;
+      font-family: 'Courier New', Courier, monospace;
+      height: 100vh;
+      max-height: 100vh;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      letter-spacing: 0.05em;
+      user-select: none;
+      overflow: hidden;
+    }
+    header {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      border: 1px solid #334155;
+      background-color: #0b0f19;
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+      flex-shrink: 0;
+    }
+    @media (min-width: 640px) { header { flex-direction: row; } }
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .status-dot {
+      width: 14px;
+      height: 14px;
+      background-color: #f59e0b;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+    }
+    .header-title-sub { color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+    .header-title-main { font-size: 20px; font-weight: bold; color: #f8fafc; }
+    .header-metrics { display: flex; align-items: center; gap: 20px; }
+    .metric-card {
+      border: 1px solid #334155;
+      background-color: #070a12;
+      padding: 8px 20px;
+      border-radius: 4px;
+      text-align: center;
+      min-width: 160px;
+    }
+    .metric-label { display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 2px; }
+    .metric-value { font-size: 20px; font-weight: bold; color: #f59e0b; }
+    .metric-value.white { color: #e2e8f0; }
+    .metric-value.blue { color: #38bdf8; }
+    .metric-divider { color: #475569; }
+    main {
+      width: 100%;
+      max-width: 1200px;
+      margin: 16px auto;
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-h: 0;
+      overflow: hidden;
+    }
+    .radar-screen {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #334155;
+      background-color: #070a12;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: auto;
+      height: 100%;
+      max-height: 73vh;
+      aspect-ratio: 3/2;
+    }
+    canvas { display: block; width: 100%; height: 100%; object-fit: contain; cursor: crosshair; }
+    .radar-screen::after {
+      content: " "; display: block; position: absolute; inset: 0;
+      background: linear-gradient(rgba(15, 23, 42, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
+      z-index: 10; background-size: 100% 4px; pointer-events: none;
+    }
+    #overlay {
+      position: absolute; inset: 0; background-color: rgba(7, 10, 18, 0.95);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 40; padding: 24px;
+    }
+    #overlay.active { opacity: 1; pointer-events: auto; }
+    .modal-box {
+      border: 1px solid #334155; background-color: #0b0f19; max-width: 420px;
+      width: 100%; padding: 32px; border-radius: 12px; text-align: center;
+    }
+    .paywall-badge {
+      width: 56px; height: 56px; background-color: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3); color: #f59e0b; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 24px; font-weight: bold;
+    }
+    .modal-title { font-size: 22px; font-weight: bold; color: #f8fafc; margin-bottom: 8px; }
+    .modal-description { color: #94a3b8; font-size: 13px; margin-bottom: 24px; line-height: 1.4; }
+    .summary-card { border: 1px solid #334155; background-color: #070a12; padding: 16px; border-radius: 4px; font-size: 14px; text-align: left; margin-bottom: 24px; }
+    .summary-row { display: flex; justify-content: space-between; margin-bottom: 12px; }
+    .summary-label { color: #64748b; }
+    .summary-value { font-weight: bold; }
+    .summary-value.white { color: #e2e8f0; }
+    .summary-value.amber { color: #f59e0b; }
+    .upgrade-button {
+      display: block; width: 100%; background-color: #f59e0b; color: #04060a; border: none;
+      font-weight: bold; padding: 14px 0; font-size: 14px; letter-spacing: 0.05em; border-radius: 4px;
+      cursor: pointer; text-decoration: none; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2); margin-bottom: 12px;
+    }
+    .upgrade-button:hover { background-color: #fbbf24; }
+    .modal-footer { font-size: 9px; color: #475569; }
+    footer {
+      width: 100%; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column;
+      align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: #475569;
+      border-top: 1px solid #1e293b; padding-top: 12px; flex-shrink: 0;
+    }
+    @media (min-width: 640px) { footer { flex-direction: row; } }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-left">
+      <div class="status-dot"></div>
+      <div>
+        <div class="header-title-sub">Grid Target Suite</div>
+        <div class="header-title-main">VECTOR INTERCEPT LOCATOR (TRIAL)</div>
+      </div>
+    </div>
+    <div class="header-metrics">
+      <div class="metric-card">
+        <span class="metric-label">Target Coordinate</span>
+        <span id="targetText" class="metric-value blue">(--, --)</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Strikes Executed</span>
+        <span class="metric-value white"><span id="score">0</span><span class="metric-divider">/</span><span id="totalAttempts">0</span></span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="radar-screen">
+      <canvas id="game" width="900" height="600"></canvas>
+      <div id="overlay">
+        <div class="modal-box">
+          <div class="paywall-badge">★</div>
+          <h2 class="modal-title">EVALUATION LIMIT REACHED</h2>
+          <p class="modal-description">Unlock unlimited mapping scenarios, coordinate defusal levels, and complete target telemetry tracking tools.</p>
+          <div class="summary-card">
+            <div class="summary-row"><span class="summary-label">Sessions Completed:</span><span class="summary-value white">1 Evaluation Cycle</span></div>
+            <div class="summary-row"><span class="summary-label">System Accuracy Rating:</span><span id="finalAccuracy" class="summary-value amber">0%</span></div>
+          </div>
+          <!-- Paste your live Instamojo shop link below -->
+          <a href="https://rjinteractivemaths.myinstamojo.com/product/coordinate-geometry-interactive-suite" target="_blank" class="upgrade-button">UPGRADE TO PREMIUM SUITE</a>
+          <p class="modal-footer">Enterprise deployment licensing available via RJ Interactive Maths.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div>RADAR TELEMETRY SYSTEM // DEMO EVALUATION EDITION</div>
+    <div>&copy; RJ Interactive Maths</div>
+  </footer>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const centerX = canvas.width / 2;
+const centerY = canvas.height / 2;
+const scale = 27; // Clean scaling to support double digits up to 10 natively
+
+let score = 0;
+let attempts = 0;
+const maxRounds = 5;
+
+let target;
+let explosions = [];
+let indicators = [];
+let activeRockets = [];
+
+const rocketImg = new Image();
+rocketImg.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2394a3b8"><path d="M12.89 2.42a1 1 0 0 0-1.78 0l-2.67 5.34a11 11 0 0 0-1.19 3.53l-.25 2A3 3 0 0 0 10 16.24V19a1 1 0 0 0 .55.89l1 1a1 1 0 0 0 1.1-.18l.8-.8a1 1 0 0 0 .28-.71v-2.96a3 3 0 0 0 3-2.94l-.25-2a11 11 0 0 0-1.19-3.53z"/></svg>';
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playBeep(freq, type, duration) {
+    try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + duration);
+    } catch(e) {}
+}
+
+function generatePoint() {
+    return {
+        x: Math.floor(Math.random() * 21) - 10, // Strictly ranges from -10 to 10
+        y: Math.floor(Math.random() * 21) - 10  // Strictly ranges from -10 to 10
+    };
+}
+
+function updateUI() {
+    document.getElementById("targetText").innerText = `(${target.x}, ${target.y})`;
+    document.getElementById("score").innerText = score;
+    document.getElementById("totalAttempts").innerText = attempts;
+}
+
+function drawGrid() {
+    ctx.strokeStyle = "rgba(51, 65, 85, 0.45)";
+    ctx.lineWidth = 1;
+    for (let x = centerX; x < canvas.width; x += scale) { ctx.beginPath(); ctx.moveTo(Math.floor(x) + 0.5, 0); ctx.lineTo(Math.floor(x) + 0.5, canvas.height); ctx.stroke(); }
+    for (let x = centerX; x > 0; x -= scale) { ctx.beginPath(); ctx.moveTo(Math.floor(x) + 0.5, 0); ctx.lineTo(Math.floor(x) + 0.5, canvas.height); ctx.stroke(); }
+    for (let y = centerY; y < canvas.height; y += scale) { ctx.beginPath(); ctx.moveTo(0, Math.floor(y) + 0.5); ctx.lineTo(canvas.width, Math.floor(y) + 0.5); ctx.stroke(); }
+    for (let y = centerY; y > 0; y -= scale) { ctx.beginPath(); ctx.moveTo(0, Math.floor(y) + 0.5); ctx.lineTo(canvas.width, Math.floor(y) + 0.5); ctx.stroke(); }
+}
+
+function drawAxes() {
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.75)";
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, centerY); ctx.lineTo(canvas.width, centerY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(centerX, 0); ctx.lineTo(centerX, canvas.height); ctx.stroke();
+}
+
+function drawNumbers() {
+    ctx.fillStyle = "rgba(148, 163, 184, 0.9)";
+    ctx.font = "700 13px 'Courier New', monospace";
+    
+    // Draw numbers -10 to 10 neatly on the layout margins
+    for (let i = -16; i <= 16; i++) { 
+        let x = centerX + i * scale; 
+        if (i !== 0 && x >= 0 && x <= canvas.width) {
+            ctx.fillText(i, x - (i < 0 || i >= 10 ? 9 : 5), centerY + 18); 
+        } 
+    }
+    for (let i = -10; i <= 10; i++) { 
+        let y = centerY - i * scale; 
+        if (i !== 0 && y >= 0 && y <= canvas.height) {
+            ctx.fillText(i, centerX + 12, y + 5); 
+        } 
+    }
+    ctx.fillText("0", centerX + 12, centerY + 18);
+}
+
+function spawnRocket(tx, ty) {
+    const startX = canvas.width / 2;
+    const startY = canvas.height;
+    const angle = Math.atan2(ty - startY, tx - startX);
+    const speed = 18;
+    activeRockets.push({ x: startX, y: startY, targetX: tx, targetY: ty, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, angle: angle + Math.PI / 2 });
+}
+
+function createExplosion(x, y) {
+    for (let i = 0; i < 35; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 4 + 1.5;
+        explosions.push({ x: x, y: y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, size: Math.random() * 2 + 1, color: `hsl(${Math.random() * 15 + 25}, 90%, 55%)`, life: 25 });
+    }
+}
+
+function addIndicator(x, y, text, success) {
+    indicators.push({ x: x, y: y, text: text, color: success ? '#38bdf8' : '#f43f5e', life: 45, offsetY: 0 });
+}
+
+function updateEntities() {
+    for (let i = activeRockets.length - 1; i >= 0; i--) {
+        let r = activeRockets[i]; r.x += r.vx; r.y += r.vy;
+        if (Math.hypot(r.targetX - r.x, r.targetY - r.y) <= 18) {
+            playBeep(440, "sine", 0.15); createExplosion(r.targetX, r.targetY); addIndicator(r.targetX, r.targetY, "TARGET CLEARED", true); activeRockets.splice(i, 1);
+        }
+    }
+    for (let i = explosions.length - 1; i >= 0; i--) { let p = explosions[i]; p.x += p.vx; p.y += p.vy; p.life--; if (p.life <= 0) explosions.splice(i, 1); }
+    for (let i = indicators.length - 1; i >= 0; i--) { let ind = indicators[i]; ind.offsetY -= 0.3; ind.life--; if (ind.life <= 0) indicators.splice(i, 1); }
+}
+
+function drawEntities() {
+    activeRockets.forEach(r => {
+        if (!rocketImg.complete) return;
+        const size = 26; ctx.save(); ctx.translate(r.x, r.y); ctx.rotate(r.angle); ctx.drawImage(rocketImg, -size / 2, -size / 2, size, size); ctx.restore();
+    });
+    explosions.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life / 25; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill(); });
+    ctx.globalAlpha = 1.0;
+    indicators.forEach(ind => { ctx.fillStyle = ind.color; ctx.font = "700 14px 'Courier New'"; ctx.globalAlpha = ind.life / 45; ctx.fillText(ind.text, ind.x + 12, ind.y + ind.offsetY); });
+    ctx.globalAlpha = 1.0;
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height); drawGrid(); drawAxes(); drawNumbers(); updateEntities(); drawEntities(); requestAnimationFrame(draw);
+}
+
+canvas.addEventListener("click", function(e) {
+    if (attempts >= maxRounds) return;
+    const rect = canvas.getBoundingClientRect();
+    const clickX = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const clickY = (e.clientY - rect.top) * (canvas.height / rect.height);
+    const mathX = Math.round((clickX - centerX) / scale);
+    const mathY = Math.round((centerY - clickY) / scale);
+
+    attempts++;
+    if (mathX === target.x && mathY === target.y) {
+        score++; playBeep(360, "sine", 0.05); spawnRocket(clickX, clickY);
+    } else {
+        playBeep(150, "sawtooth", 0.15); addIndicator(clickX, clickY, `MISALIGNMENT (${mathX}, ${mathY})`, false);
+    }
+    updateUI();
+    if (attempts >= maxRounds) { setTimeout(endGame, 1200); } else { target = generatePoint(); updateUI(); }
+});
+
+function endGame() {
+    const overlay = document.getElementById("overlay");
+    const accuracy = attempts === 0 ? 100 : Math.round((score / attempts) * 100);
+    document.getElementById("finalAccuracy").innerText = `${accuracy}%`;
+    overlay.classList.add("active");
+}
+
+target = generatePoint(); updateUI(); draw();
+</script>
+</body>
+</html>
