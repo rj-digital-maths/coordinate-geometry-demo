@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadrant Interceptor - Tactical Suite (Demo)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background: #090d16;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        #game-container {
+            position: relative;
+            width: 1024px;
+            height: 720px;
+            background: radial-gradient(circle, #111827 0%, #030712 100%);
+            border: 4px solid #10b981;
+            border-radius: 16px;
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.25);
+            overflow: hidden;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 24px;
+            background: rgba(3, 7, 18, 0.9);
+            border-bottom: 3px solid #1f2937;
+        }
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #10b981;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+        .controls-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        select {
+            background: #111827;
+            color: #10b981;
+            border: 2px solid #10b981;
+            padding: 6px 12px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            outline: none;
+        }
+        select:hover {
+            background: #1f2937;
+        }
+        .stats {
+            font-size: 18px;
+            font-weight: bold;
+            color: #10b981;
+            background: #111827;
+            padding: 8px 20px;
+            border-radius: 6px;
+            border: 1px solid #1f2937;
+        }
+        canvas {
+            display: block;
+            background: transparent;
+            cursor: crosshair;
+        }
+        footer {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 14px;
+            color: #4b5563;
+            letter-spacing: 1px;
+            z-index: 5;
+        }
+
+        /* 🌟 NEW: Live Floating Classroom Guide Card Overlay */
+        #guide-overlay {
+            position: absolute;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid #10b981;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-align: center;
+            pointer-events: none;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+            animation: pulseGlow 2s infinite ease-in-out;
+            transition: opacity 0.6s ease;
+            z-index: 8;
+        }
+        #guide-overlay p {
+            margin: 4px 0;
+            font-size: 15px;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); }
+            50% { box-shadow: 0 0 25px rgba(16, 185, 129, 0.5); }
+        }
+
+        #paywall {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(3, 7, 12, 0.97);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .modal-card {
+            background: #111827;
+            border: 3px solid #ef4444;
+            padding: 40px;
+            border-radius: 12px;
+            max-width: 550px;
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
+        }
+        .modal-card h2 {
+            color: #ef4444;
+            margin-top: 0;
+            font-size: 34px;
+        }
+        .modal-card p {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #9ca3af;
+            margin-bottom: 30px;
+        }
+        .cta-btn {
+            display: inline-block;
+            background: #ef4444;
+            color: white;
+            text-decoration: none;
+            padding: 16px 36px;
+            font-size: 22px;
+            font-weight: bold;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+        .cta-btn:hover {
+            background: #dc2626;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- ⚡ NEW: Instant Instruction Card for Free Visitors -->
+        <div id="guide-overlay" style="text-align: left;">
+            <p style="color: #fbbf24; text-align: center; margin-bottom: 8px;">🎯 HOW TO PLAY:</p>
+            <p>• Read the target coordinates in the center box.</p>
+            <p>• Move your mouse across the grid to aim the rifle.</p>
+            <p>• Left-Click (or tap Smartboard) to shoot the correct quadrant!</p>
+        </div>
+
+        <header>
+            <h1>⚡ QUADRANT INTERCEPTOR <span style="font-size: 12px; color: #ef4444; vertical-align: middle;">[DEMO]</span></h1>
+            <div class="controls-wrapper">
+                <select id="levelSelect">
+                    <option value="easy">LEVEL: BASIC (STATIC)</option>
+                    <option value="pro">LEVEL: PRO (BALLOONS)</option>
+                </select>
+                <div class="stats" id="score-board">AMMO: 0/5 | CONFIRMED: 0</div>
+            </div>
+        </header>
+
+        <canvas id="gameCanvas" width="1024" height="640"></canvas>
+        
+        <footer>© 2026 RJ Interactive Maths. All rights reserved.</footer>
+
+        <div id="paywall">
+            <div class="modal-card">
+                <h2>⚠️ LOCKOUT DETECTED</h2>
+                <p>Evaluation module complete! Moving vector targets require processing patches.</p>
+                <p>Upgrade to the <strong>Premium Master Suite</strong> to unlock unlimited interactive rounds, the Teacher Custom Manual Input panel, high-visibility layout scaling, and audio controls.</p>
+                <!-- Paste your final Instamojo item URL in the href box below -->
+                <a href="https://rjinteractivemaths.myinstamojo.com/product/quadrant-interceptor-premium-interactive-coo/" target="_blank" class="cta-btn">UPGRADE FULL MASTER PACK (₹99) 🚀</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const paywall = document.getElementById('paywall');
+        const scoreBoard = document.getElementById('score-board');
+        const levelSelect = document.getElementById('levelSelect');
+        const guideOverlay = document.getElementById('guide-overlay');
+
+        let currentMode = "easy"; 
+        let roundCount = 0;
+        let score = 0;
+        const maxDemoRounds = 5;
+        let isGameOver = false;
+
+        let currentCoord = { x: 0, y: 0, correctQuad: "" };
+        const weapon = { x: canvas.width / 2, y: canvas.height - 40, angle: 0 };
+
+        const staticTargets = [
+            { id: "Q2", label: "QUADRANT II", signs: "(- , +)", x: 260, y: 160, r: 70, color: "#38bdf8" },
+            { id: "Q1", label: "QUADRANT I", signs: "(+ , +)", x: 764, y: 160, r: 70, color: "#10b981" },
+            { id: "Q3", label: "QUADRANT III", signs: "(- , -)", x: 260, y: 420, r: 70, color: "#a855f7" },
+            { id: "Q4", label: "QUADRANT IV", signs: "(+ , -)", x: 764, y: 420, r: 70, color: "#f43f5e" }
+        ];
+
+        let proBalloons = [
+            { id: "Q1", label: "Q1 (+,+)", x: 200, y: 200, r: 62, color: "#10b981", dx: 2, dy: 1.5 },
+            { id: "Q2", label: "Q2 (-,+)", x: 400, y: 150, r: 62, color: "#38bdf8", dx: -1.8, dy: 2 },
+            { id: "Q3", label: "Q3 (-,-)", x: 600, y: 300, r: 62, color: "#a855f7", dx: 2.2, dy: -1.2 },
+            { id: "Q4", label: "Q4 (+,-)", x: 800, y: 250, r: 62, color: "#f43f5e", dx: -1.5, dy: -2 }
+        ];
+
+        let projectile = { x: 0, y: 0, active: false, speed: 35, dx: 0, dy: 0 };
+        
+        let particles = [];
+        let errorRainDrops = [];
+        let errorRainTimer = 0;
+
+        // Auto-fade instruction instructions overlay after 5 seconds automatically
+        setTimeout(() => { if(guideOverlay) guideOverlay.style.opacity = '0'; }, 10000);
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (type === 'fire') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'hit') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.08);
+                osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.16);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'miss') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(130, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(60, audioCtx.currentTime + 0.4);
+                gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+            }
+        }
+
+        function generateNewCoordinate() {
+            let x = (Math.floor(Math.random() * 10) + 1) * (Math.random() < 0.5 ? 1 : -1);
+            let y = (Math.floor(Math.random() * 10) + 1) * (Math.random() < 0.5 ? 1 : -1);
+            
+            let correctQuad = "";
+            if (x > 0 && y > 0) correctQuad = "Q1";
+            else if (x < 0 && y > 0) correctQuad = "Q2";
+            else if (x < 0 && y < 0) correctQuad = "Q3";
+            else if (x > 0 && y < 0) correctQuad = "Q4";
+
+            currentCoord = { x, y, correctQuad };
+        }
+
+        levelSelect.addEventListener('change', (e) => {
+            currentMode = e.target.value;
+            projectile.active = false;
+            generateNewCoordinate();
+        });
+
+        let mouseX = canvas.width / 2, mouseY = 0;
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+            weapon.angle = Math.atan2(mouseY - weapon.y, mouseX - weapon.x);
+        });
+
+        canvas.addEventListener('click', () => {
+            if (projectile.active || isGameOver) return;
+            
+            // Hide guide layout immediately on first input shoot action trigger
+            if(guideOverlay) guideOverlay.style.opacity = '0';
+
+            projectile.x = weapon.x;
+            projectile.y = weapon.y;
+            
+            let targetDist = Math.hypot(mouseX - weapon.x, mouseY - weapon.y);
+            projectile.dx = ((mouseX - weapon.x) / targetDist) * projectile.speed;
+            projectile.dy = ((mouseY - weapon.y) / targetDist) * projectile.speed;
+            projectile.active = true;
+            playSound('fire');
+        });
+
+        function createCelebrationConfetti(x, y) {
+            const colors = ['#10b981', '#38bdf8', '#fbbf24', '#f43f5e', '#a855f7', '#ffffff'];
+            for (let i = 0; i < 40; i++) {
+                particles.push({
+                    x: x, y: y, type: Math.random() > 0.4 ? 'star' : 'circle', radius: Math.random() * 6 + 3,
+                    color: colors[Math.floor(Math.random() * colors.length)], dx: (Math.random() - 0.5) * 12,
+                    dy: (Math.random() - 0.6) * 14, gravity: 0.25, alpha: 1, decay: Math.random() * 0.015 + 0.01
+                });
+            }
+        }
+
+        function triggerErrorStorm() {
+            errorRainTimer = 45;
+            for (let i = 0; i < 60; i++) {
+                errorRainDrops.push({
+                    x: Math.random() * canvas.width, y: Math.random() * -200, length: Math.random() * 25 + 15,
+                    speed: Math.random() * 12 + 10, weight: Math.random() * 2 + 1
+                });
+            }
+        }
+
+        function processScoreboardHit(targetId) {
+            roundCount++;
+            if (targetId === currentCoord.correctQuad) {
+                score++;
+                playSound('hit');
+                createCelebrationConfetti(projectile.x, projectile.y);
+            } else {
+                playSound('miss');
+                triggerErrorStorm();
+            }
+
+            scoreBoard.innerText = `AMMO: ${roundCount}/5 | CONFIRMED: ${score}`;
+            projectile.active = false;
+
+            if (roundCount >= maxDemoRounds) {
+                isGameOver = true;
+                setTimeout(() => { paywall.style.display = 'flex'; }, 1200);
+            } else {
+                generateNewCoordinate();
+            }
+        }
+
+        function updateBalloonPhysics() {
+            proBalloons.forEach(b => {
+                b.x += b.dx; b.y += b.dy;
+                if (b.x - b.r < 0 || b.x + b.r > canvas.width) b.dx *= -1;
+                if (b.y - b.r < 0 || b.y + b.r > canvas.height - 150) b.dy *= -1;
+            });
+        }
+
+        function drawStarShape(ctx, cx, cy, spikes, outerRadius, innerRadius, color, alpha) {
+            let rot = Math.PI / 2 * 3; let x = cx; let y = cy; let step = Math.PI / spikes;
+            ctx.save(); ctx.globalAlpha = alpha; ctx.beginPath(); ctx.moveTo(cx, cy - outerRadius)
+            for (let i = 0; i < spikes; i++) {
+                x = cx + Math.cos(rot) * outerRadius; y = cy + Math.sin(rot) * outerRadius; ctx.lineTo(x, y); rot += step;
+                x = cx + Math.cos(rot) * innerRadius; y = cy + Math.sin(rot) * innerRadius; ctx.lineTo(x, y); rot += step;
+            }
+            ctx.lineTo(cx, cy - outerRadius); ctx.closePath(); ctx.fillStyle = color; ctx.fill(); ctx.restore();
+        }
+
+        function updateAndRenderFrame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 2; ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0); ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.moveTo(0, canvas.height / 2 - 20); ctx.lineTo(canvas.width, canvas.height / 2 - 20);
+            ctx.stroke();
+
+            if (currentMode === "easy") {
+                staticTargets.forEach(t => {
+                    ctx.beginPath(); ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2);
+                    ctx.fillStyle = t.color; ctx.globalAlpha = 0.05; ctx.fill(); ctx.globalAlpha = 1.0;
+                    ctx.strokeStyle = t.color; ctx.lineWidth = t.id === currentCoord.correctQuad ? 3 : 1.5; ctx.stroke();
+
+                    ctx.fillStyle = t.color; ctx.font = "bold 16px 'Courier New'"; ctx.textAlign = "center";
+                    ctx.fillText(t.label, t.x, t.y - 10);
+                    ctx.fillStyle = "#fff"; ctx.font = "14px Arial"; ctx.fillText(t.signs, t.x, t.y + 15);
+                });
+            } else {
+                updateBalloonPhysics();
+                proBalloons.forEach(b => {
+                    ctx.save();
+                    ctx.strokeStyle = '#4b5563'; ctx.lineWidth = 2; ctx.beginPath();
+                    ctx.moveTo(b.x, b.y + b.r); ctx.lineTo(b.x, b.y + b.r + 30); ctx.stroke();
+
+                    let gradient = ctx.createRadialGradient(b.x - b.r/3, b.y - b.r/3, 5, b.x, b.y, b.r);
+                    gradient.addColorStop(0, '#ffffff'); gradient.addColorStop(0.3, b.color); gradient.addColorStop(1, '#050b14');
+                    
+                    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+                    ctx.fillStyle = gradient; ctx.globalAlpha = 0.95; ctx.fill(); ctx.globalAlpha = 1.0;
+                    ctx.strokeStyle = b.id === currentCoord.correctQuad ? "#ffffff" : "transparent"; ctx.lineWidth = 3.5; ctx.stroke();
+
+                    ctx.font = "bold 18px 'Courier New'"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                    ctx.strokeStyle = "#000000"; ctx.lineWidth = 5; ctx.strokeText(b.label, b.x, b.y);
+                    ctx.fillStyle = "#ffffff"; ctx.fillText(b.label, b.x, b.y);
+                    ctx.restore();
+                });
+            }
+
+            if (projectile.active) {
+                projectile.x += projectile.dx; projectile.y += projectile.dy;
+                ctx.beginPath(); ctx.arc(projectile.x, projectile.y, 7, 0, Math.PI * 2);
+                ctx.fillStyle = "#fbbf24"; ctx.fill();
+
+                let activeSet = currentMode === "easy" ? staticTargets : proBalloons;
+                activeSet.forEach(t => {
+                    if (Math.hypot(projectile.x - t.x, projectile.y - t.y) < t.r) processScoreboardHit(t.id);
+                });
+
+                if (projectile.y < 0 || projectile.x < 0 || projectile.x > canvas.width || projectile.y > canvas.height) projectile.active = false;
+            }
+
+            particles.forEach((p, index) => {
+                p.dy += p.gravity; p.x += p.dx; p.y += p.dy; p.alpha -= p.decay;
+                if (p.alpha <= 0) { particles.splice(index, 1); } 
+                else {
+                    if (p.type === 'star') drawStarShape(ctx, p.x, p.y, 5, p.radius * 1.5, p.radius * 0.6, p.color, p.alpha);
+                    else { ctx.save(); ctx.globalAlpha = p.alpha; ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fillStyle = p.color; ctx.fill(); ctx.restore(); }
+                }
+            });
+
+            if (errorRainTimer > 0) {
+                errorRainTimer--;
+                errorRainDrops.forEach((d) => {
+                    d.y += d.speed; ctx.strokeStyle = "rgba(239, 68, 68, 0.6)"; ctx.lineWidth = d.weight;
+                    ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(d.x, d.y + d.length); ctx.stroke();
+                    if (d.y > canvas.height) { d.y = -30; d.x = Math.random() * canvas.width; }
+                });
+                if (errorRainTimer === 0) errorRainDrops = [];
+            }
+
+            if (!isGameOver) {
+                ctx.fillStyle = "#0f172a"; ctx.strokeStyle = "#10b981"; ctx.lineWidth = 2;
+                ctx.fillRect(canvas.width / 2 - 140, canvas.height / 2 - 50, 280, 60);
+                ctx.strokeRect(canvas.width / 2 - 140, canvas.height / 2 - 50, 280, 60);
+
+                ctx.fillStyle = "#ffffff"; ctx.font = "bold 24px 'Courier New'"; ctx.textAlign = "center";
+                ctx.fillText(`TARGET: (${currentCoord.x}, ${currentCoord.y})`, canvas.width / 2, canvas.height / 2 - 12);
+            }
+
+            ctx.save(); ctx.translate(weapon.x, weapon.y); ctx.rotate(weapon.angle + Math.PI / 2);
+            ctx.fillStyle = '#1f2937'; ctx.fillRect(-10, 15, 20, 35); ctx.fillStyle = '#374151'; ctx.fillRect(-8, -15, 16, 30);
+            ctx.fillStyle = '#111827'; ctx.fillRect(-6, -5, 12, 18); ctx.fillStyle = '#1f2937'; ctx.fillRect(-5, -45, 10, 30);
+            ctx.fillStyle = '#4b5563'; ctx.fillRect(-3, -75, 6, 35);
+            ctx.restore();
+
+            requestAnimationFrame(updateAndRenderFrame);
+        }
+
+        generateNewCoordinate();
+        updateAndRenderFrame();
+    </script>
+</body>
+</html>
